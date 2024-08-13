@@ -41,10 +41,41 @@ import OrderOverview from "layouts/dashboard/components/OrderOverview";
 // Data
 import reportsBarChartData from "layouts/dashboard/data/reportsBarChartData";
 import gradientLineChartData from "layouts/dashboard/data/gradientLineChartData";
+import axios from "axios";
+import { useEffect, useState } from "react";
+import { max } from "moment";
 
 function Dashboard() {
   const { size } = typography;
   const { chart, items } = reportsBarChartData;
+  const [waterLevel, setWaterLevel] = useState("");
+
+  async function fetchin_water_data() {
+    try {
+      const response = await axios.get("http://localhost:8000/latest-data");
+
+      // response.data contains the array of data
+      const fetchedData = response.data;
+
+      if (fetchedData.length > 0) {
+        // Access the first item in the array
+        const firstItem = fetchedData[0];
+        console.log(firstItem.id);
+        setWaterLevel(firstItem.level);
+
+        // Optionally, set the water level using firstItem.level
+        // setWaterLevel(firstItem.level);
+      } else {
+        console.log("No data found");
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  useEffect(() => {
+    fetchin_water_data();
+  }, []);
 
   return (
     <DashboardLayout>
@@ -54,7 +85,7 @@ function Dashboard() {
             <Grid item xs={12} sm={6} xl={3}>
               <MiniStatisticsCard
                 title={{ text: "Water Level-Station 1" }}
-                count="120cm"
+                count={waterLevel + "cm"}
                 icon={{ color: "success", component: "cell_tower" }}
               />
             </Grid>
@@ -83,6 +114,8 @@ function Dashboard() {
             <Grid item xs={12} lg={4}>
               <OrderOverview />
             </Grid>
+
+            {/* <button onClick={fetchin_water_data}>Clickme</button> */}
           </Grid>
         </SoftBox>
       </SoftBox>

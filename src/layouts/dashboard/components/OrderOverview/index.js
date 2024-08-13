@@ -16,6 +16,7 @@ Coded by www.creative-tim.com
 // @mui material components
 import Card from "@mui/material/Card";
 import Icon from "@mui/material/Icon";
+import axios from "axios";
 
 // Soft UI Dashboard React components
 import SoftBox from "components/SoftBox";
@@ -23,8 +24,38 @@ import SoftTypography from "components/SoftTypography";
 
 // Soft UI Dashboard React examples
 import TimelineItem from "examples/Timeline/TimelineItem";
+import { useEffect, useState } from "react";
 
-function OrdersOverview() {
+function OrdersOverview(props) {
+  const [waterLevel, setWaterLevel] = useState("");
+  const [timestamp, setTimestamp] = useState("");
+  async function fetchin_water_data() {
+    try {
+      const response = await axios.get("http://localhost:8000/latest-data");
+
+      // response.data contains the array of data
+      const fetchedData = response.data;
+
+      if (fetchedData.length > 0) {
+        // Access the first item in the array
+        const firstItem = fetchedData[0];
+        console.log(firstItem.id);
+        setWaterLevel(firstItem.level);
+        setTimestamp(firstItem.timestamp);
+
+        // Optionally, set the water level using firstItem.level
+        // setWaterLevel(firstItem.level);
+      } else {
+        console.log("No data found");
+      }
+    } catch (e) {
+      console.log(e);
+    }
+  }
+
+  useEffect(() => {
+    fetchin_water_data();
+  }, []);
   return (
     <Card className="h-100">
       <SoftBox pt={3} px={3}>
@@ -36,8 +67,9 @@ function OrdersOverview() {
         <TimelineItem
           color="info"
           icon="show_chart"
-          title="50cm, Water Level"
-          dateTime="13 AUG 7:20 PM"
+          // eslint-disable-next-line react/prop-types
+          title={waterLevel + "cm"}
+          dateTime={timestamp}
         />
         <TimelineItem
           color="warning"
