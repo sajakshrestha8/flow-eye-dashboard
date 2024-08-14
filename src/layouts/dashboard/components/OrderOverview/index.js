@@ -27,92 +27,47 @@ import TimelineItem from "examples/Timeline/TimelineItem";
 import { useEffect, useState } from "react";
 
 function OrdersOverview(props) {
-  const [waterLevel, setWaterLevel] = useState("");
-  const [timestamp, setTimestamp] = useState("");
-  async function fetchin_water_data() {
-    try {
-      const response = await axios.get("http://localhost:8000/latest-data");
+  const [logs, setLogs] = useState([]);
 
-      // response.data contains the array of data
-      const fetchedData = response.data;
-
-      if (fetchedData.length > 0) {
-        // Access the first item in the array
-        const firstItem = fetchedData[0];
-        console.log(firstItem.id);
-        setWaterLevel(firstItem.level);
-        setTimestamp(firstItem.timestamp);
-
-        // Optionally, set the water level using firstItem.level
-        // setWaterLevel(firstItem.level);
-      } else {
-        console.log("No data found");
-      }
-    } catch (e) {
-      console.log(e);
-    }
-  }
+  // Fetch logs from the backend
   useEffect(() => {
-    fetchin_water_data(); // Initial fetch
+    async function fetchLogs() {
+      try {
+        const response = await axios.get("http://localhost:8000/logs");
+        setLogs(response.data);
+      } catch (error) {
+        console.error("Error fetching logs:", error);
+      }
+    }
 
+    fetchLogs();
+
+    // Optionally, set an interval to refresh logs every few seconds
     const interval = setInterval(() => {
-      fetchin_water_data(); // Fetch data every 5 seconds
-    }, 2000);
+      fetchLogs();
+    }, 2000); // Update every 5 seconds
 
-    return () => clearInterval(interval); // Clear interval on component unmount
+    return () => clearInterval(interval);
   }, []);
 
   return (
     <Card className="h-100">
-      <SoftBox pt={3} px={3}>
-        <SoftTypography variant="h6" fontWeight="medium">
-          Log
-        </SoftTypography>
-      </SoftBox>
       <SoftBox p={2}>
-        <TimelineItem
-          color="info"
-          icon="show_chart"
-          // eslint-disable-next-line react/prop-types
-          title={waterLevel + "cm"}
-          dateTime={timestamp}
-        />
-        <TimelineItem
-          color="warning"
-          icon="mail"
-          title="Warning Message Sent"
-          dateTime="14 AUG  10:35 PM"
-        />
-        <TimelineItem
-          color="error"
-          icon="warning"
-          title="Flood Alert - 70cm"
-          dateTime="14 AUG 11 PM"
-        />
-        <TimelineItem
-          color="info"
-          icon="show_chart"
-          title="60cm, Water Level"
-          dateTime="13 AUG 7:20 PM"
-        />
-        <TimelineItem
-          color="info"
-          icon="show_chart"
-          title="65cm, Water Level"
-          dateTime="13 AUG 7:20 PM"
-        />
-        <TimelineItem
-          color="info"
-          icon="show_chart"
-          title="70cm, Water Level"
-          dateTime="13 AUG 7:20 PM"
-        />
-        <TimelineItem
-          color="info"
-          icon="show_chart"
-          title="80cm, Water Level"
-          dateTime="13 AUG 7:20 PM"
-        />
+        {logs.map((log, index) => (
+          <TimelineItem
+            key={index}
+            color={log.flood_alert ? "error" : log.sms_alert_sent ? "warning" : "info"} // Corrected 'sms_sent' to 'sms_alert_sent'
+            icon={log.flood_alert ? "warning" : log.sms_alert_sent ? "mail" : "show_chart"} // Corrected 'sms_sent' to 'sms_alert_sent'
+            title={
+              log.flood_alert
+                ? `Flood Alert: ${log.level}cm`
+                : log.sms_alert_sent
+                ? `Warning Sent: ${log.level}cm`
+                : `${log.level}cm, Water Level`
+            } // Corrected 'sms_sent' to 'sms_alert_sent'
+            dateTime={new Date(log.timestamp).toLocaleString()} // Format the timestamp as needed
+          />
+        ))}
       </SoftBox>
     </Card>
   );

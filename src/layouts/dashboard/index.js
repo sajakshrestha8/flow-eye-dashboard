@@ -44,11 +44,13 @@ import gradientLineChartData from "layouts/dashboard/data/gradientLineChartData"
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { max } from "moment";
+import useGradientLineChartData from "./data/gradientLineChartData";
 
 function Dashboard() {
   const { size } = typography;
   const { chart, items } = reportsBarChartData;
   const [waterLevel, setWaterLevel] = useState("");
+  const chartData = useGradientLineChartData();
 
   async function fetchin_water_data() {
     try {
@@ -114,7 +116,7 @@ function Dashboard() {
                 title="Level Readings"
                 description={<SoftBox display="flex" alignItems="center"></SoftBox>}
                 height="25.80rem"
-                chart={gradientLineChartData}
+                chart={chartData}
               />
             </Grid>
             <Grid item xs={12} lg={4}>
