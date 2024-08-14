@@ -17,7 +17,7 @@ const db = mysql.createConnection({
   host: "localhost",
   user: "root",
   password: "",
-  database: "water_levels_db",
+  database: "water_test",
 });
 
 db.connect((err) => {
@@ -35,7 +35,9 @@ function initDb() {
         CREATE TABLE IF NOT EXISTS levels (
             id INT AUTO_INCREMENT PRIMARY KEY,
             level INT NOT NULL,
-            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            sms_alert_sent BOOLEAN DEFAULT FALSE,
+            flood_alert BOOLEAN DEFAULT FALSE
         )
     `;
   db.query(query, (err, result) => {
@@ -69,22 +71,28 @@ app.post("/api/water-level", (req, res) => {
   const { level } = req.body;
 
   if (level !== undefined) {
-    const query = "INSERT INTO levels (level) VALUES (?)";
-    db.query(query, [level], (err, result) => {
+    let smsAlert = false;
+    let floodAlert = false;
+
+    // Determine if an SMS alert or flood alert should be triggered
+    if (level > 25) {
+      smsAlert = true;
+      const currentTime = moment().format("YYYY-MM-DD HH:mm:ss");
+      const message = `चेतावनी: पानीको सतह सुरक्षित सतह भन्दा माथि पुगेको छ। हालको सतह: ${level} से.मि. ${currentTime} मा।`;
+      sendSms(message);
+    }
+
+    if (level > 70) {
+      floodAlert = true;
+    }
+
+    const query = "INSERT INTO levels (level, sms_alert_sent, flood_alert) VALUES (?, ?, ?)";
+    db.query(query, [level, smsAlert, floodAlert], (err, result) => {
       if (err) {
         console.error("Error inserting data:", err);
         return res.status(500).json({ status: "error", message: err.message });
       }
-
-      const currentTime = moment().format("YYYY-MM-DD HH:mm:ss");
-
-      // Send SMS if water level exceeds 25 cm
-      if (level > 25) {
-        const message = `चेतावनी: पानीको सतह सुरक्षित सतह भन्दा माथि पुगेको छ। हालको सतह: ${level} से.मि. ${currentTime} मा।`;
-        sendSms(message);
-      }
-
-      res.json({ status: "success", level });
+      res.json({ status: "success", level, smsAlert, floodAlert });
     });
   } else {
     res.status(400).json({ status: "error", message: "No water level provided" });
@@ -117,14 +125,21 @@ app.get("/latest-data", (req, res) => {
 
 // Route to get water level data for the chart
 app.get("/chart-data", (req, res) => {
-  // Query to get the data. Adjust according to your needs.
+  // Query to get every 10th level from the database
   const query = `
     SELECT 
-      DATE_FORMAT(timestamp, '%b') AS month, 
-      AVG(level) AS avg_level
-    FROM levels
-    GROUP BY month
+        level, 
+        DATE_FORMAT(timestamp, '%H:%i') AS month
+    FROM (
+        SELECT 
+            level, 
+            timestamp
+        FROM levels
+        ORDER BY timestamp DESC
+        LIMIT 100 -- Modify this limit as per your requirement
+    ) AS latest_entries
     ORDER BY timestamp ASC
+    LIMIT 10;
   `;
   db.query(query, (err, results) => {
     if (err) {
@@ -134,6 +149,24 @@ app.get("/chart-data", (req, res) => {
     res.json(results);
   });
 });
+
+// Route to get the latest 7 logs for the dashboard
+app.get("/logs", (req, res) => {
+  const query = `
+    SELECT level, timestamp, sms_alert_sent, flood_alert 
+    FROM levels 
+    ORDER BY timestamp DESC 
+    LIMIT 8;
+  `;
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Error retrieving logs:", err);
+      return res.status(500).json({ status: "error", message: err.message });
+    }
+    res.json(results);
+  });
+});
+
 // Start the server
 const PORT = 8000;
 app.listen(PORT, () => {
