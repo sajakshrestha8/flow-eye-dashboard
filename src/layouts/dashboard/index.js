@@ -74,7 +74,13 @@ function Dashboard() {
   }
 
   useEffect(() => {
-    fetchin_water_data();
+    fetchin_water_data(); // Initial fetch
+
+    const interval = setInterval(() => {
+      fetchin_water_data(); // Fetch data every 5 seconds
+    }, 2000);
+
+    return () => clearInterval(interval); // Clear interval on component unmount
   }, []);
 
   return (

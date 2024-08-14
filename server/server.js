@@ -49,11 +49,10 @@ function initDb() {
 
 // Function to send an SMS alert
 function sendSms(message) {
-  const payload = {
-    auth_token: AUTH_TOKEN,
-    to: ALERT_PHONE_NUMBER,
-    text: message,
-  };
+  const payload = new URLSearchParams();
+  payload.append("auth_token", AUTH_TOKEN);
+  payload.append("to", ALERT_PHONE_NUMBER);
+  payload.append("text", message);
 
   axios
     .post(SMS_API_URL, payload)
@@ -81,7 +80,7 @@ app.post("/api/water-level", (req, res) => {
 
       // Send SMS if water level exceeds 25 cm
       if (level > 25) {
-        const message = `चेतावनी: पानीको स्तर सुरक्षित स्तरभन्दा माथि पुगेको छ। हालको स्तर: ${level} से.मि. ${currentTime} मा।`;
+        const message = `चेतावनी: पानीको सतह सुरक्षित सतह भन्दा माथि पुगेको छ। हालको सतह: ${level} से.मि. ${currentTime} मा।`;
         sendSms(message);
       }
 
@@ -116,6 +115,25 @@ app.get("/latest-data", (req, res) => {
   });
 });
 
+// Route to get water level data for the chart
+app.get("/chart-data", (req, res) => {
+  // Query to get the data. Adjust according to your needs.
+  const query = `
+    SELECT 
+      DATE_FORMAT(timestamp, '%b') AS month, 
+      AVG(level) AS avg_level
+    FROM levels
+    GROUP BY month
+    ORDER BY timestamp ASC
+  `;
+  db.query(query, (err, results) => {
+    if (err) {
+      console.error("Error retrieving chart data:", err);
+      return res.status(500).json({ status: "error", message: err.message });
+    }
+    res.json(results);
+  });
+});
 // Start the server
 const PORT = 8000;
 app.listen(PORT, () => {

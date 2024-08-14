@@ -52,10 +52,16 @@ function OrdersOverview(props) {
       console.log(e);
     }
   }
-
   useEffect(() => {
-    fetchin_water_data();
+    fetchin_water_data(); // Initial fetch
+
+    const interval = setInterval(() => {
+      fetchin_water_data(); // Fetch data every 5 seconds
+    }, 2000);
+
+    return () => clearInterval(interval); // Clear interval on component unmount
   }, []);
+
   return (
     <Card className="h-100">
       <SoftBox pt={3} px={3}>
