@@ -136,7 +136,7 @@ app.get("/chart-data", (req, res) => {
             timestamp
         FROM levels
         ORDER BY timestamp DESC
-        LIMIT 100 -- Modify this limit as per your requirement
+        LIMIT 10
     ) AS latest_entries
     ORDER BY timestamp ASC
     LIMIT 10;

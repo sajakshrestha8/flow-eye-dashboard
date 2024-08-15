@@ -115,7 +115,7 @@ function Dashboard() {
               <GradientLineChart
                 title="Level Readings"
                 description={<SoftBox display="flex" alignItems="center"></SoftBox>}
-                height="25.80rem"
+                height="26.5rem"
                 chart={chartData}
               />
             </Grid>
